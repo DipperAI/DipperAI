@@ -2,7 +2,7 @@
 
 ![](./docs/images/banner.png)
 
-<center>  <a href="./readme.md">English</a> ｜ 中文 </center>
+<p align="center"><a href="./readme.md">English</a> ｜ 中文</p>
 
 ## 简介
 
