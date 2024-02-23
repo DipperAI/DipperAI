@@ -1,12 +1,13 @@
-import requests
 import json
+import requests
 from vendor import Alibaba
 from version import __version__
+from utils.logger import setup_logger
 from utils.cache import set_cache, get_cache
 
 
 class Modelscope:
-    def __init__(self, model_url, cloud=None, config=None, url=None):
+    def __init__(self, model_url, cloud=None, config=None, url=None, debug=False):
         """
 
         :param url:
@@ -14,12 +15,14 @@ class Modelscope:
         """
         self.model_url = model_url
         self.url = url
-        self.vendor = cloud or Alibaba(config)
+        self.logger = setup_logger(debug=debug)
+        self.vendor = cloud or Alibaba(config, self.logger)
         self.config = config
         self.service_name = ""
         self.model_id = ""
         self.model_version = ""
         self.headers = {'Content-Type': 'application/json', "User-Agent": "serverlessai@%s" % __version__}
+
 
     def login(self):
         """

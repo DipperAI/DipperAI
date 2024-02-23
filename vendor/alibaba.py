@@ -1,23 +1,27 @@
 import os
-import requests
 import time
 import json
 import hmac
-import hashlib
 import base64
 import random
+import hashlib
+import requests
 
 
 class Alibaba:
 
     def __init__(self, ACCESS_KEY_ID=os.environ.get("ALIBABA_CLOUD_ACCESS_KEY_ID", None),
                  ACCESS_KEY_SECRET=os.environ.get("ALIBABA_CLOUD_ACCESS_KEY_SECRET", None),
-                 SECURITY_TOKEN=os.environ.get("ALIBABA_CLOUD_SECURITY_TOKEN", None), config=None):
-        self.ALIBABA_CLOUD_ACCESS_KEY_ID = ACCESS_KEY_ID
-        self.ALIBABA_CLOUD_ACCESS_KEY_SECRET = ACCESS_KEY_SECRET
-        self.ALIBABA_CLOUD_SECURITY_TOKEN = SECURITY_TOKEN
+                 SECURITY_TOKEN=os.environ.get("ALIBABA_CLOUD_SECURITY_TOKEN", None),
+                 ACCOUNT_ID=os.environ.get("FC_ACCOUNT_ID", None),
+                 config=None, logger=None):
         self.config = config
+        self.logger = logger
+        self.ALIBABA_CLOUD_ACCESS_KEY_ID = ACCESS_KEY_ID
+        self.ALIBABA_CLOUD_SECURITY_TOKEN = SECURITY_TOKEN
+        self.ALIBABA_CLOUD_ACCESS_KEY_SECRET = ACCESS_KEY_SECRET
         self.endpoint = '1583208943291465.cn-hangzhou.fc.aliyuncs.com'
+
 
     def sign_request(self, method, headers, resource):
         """
