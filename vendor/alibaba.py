@@ -1,7 +1,12 @@
 import os
-from alibabacloud_fc20230330.client import Client as FC20230330Client
-from alibabacloud_tea_openapi import models as open_api_models
-from alibabacloud_tea_util import models as util_models
+import requests
+import time
+import json
+import hmac
+import hashlib
+import base64
+import random
+
 
 class Alibaba:
 
@@ -12,39 +17,150 @@ class Alibaba:
         self.ALIBABA_CLOUD_ACCESS_KEY_SECRET = ACCESS_KEY_SECRET
         self.ALIBABA_CLOUD_SECURITY_TOKEN = SECURITY_TOKEN
         self.config = config
-        config = open_api_models.Config(
-            access_key_id=self.ALIBABA_CLOUD_ACCESS_KEY_ID,
-            access_key_secret=self.ALIBABA_CLOUD_ACCESS_KEY_SECRET
-        )
-        config.endpoint = f'<your-account-id>.cn-hangzhou.fc.aliyuncs.com'
-        self.client = FC20230330Client(config)
+        self.endpoint = '1583208943291465.cn-hangzhou.fc.aliyuncs.com'
 
+    def sign_request(self, method, headers, resource):
+        """
+        alibaba cloud api request sign method;
+        docs: https://help.aliyun.com/zh/sdk/product-overview/roa-mechanism?spm=a2c4g.2618586.0.i9
+        :param method: request method
+        :param headers: request headers
+        :param resource: request uri
+        :return: signed string, like: "acs keyid:sign"
+        """
+        string_to_sign = (f"{method}\n{headers.get('accept', '')}\n{headers.get('content-md5', '')}\n"
+                          f"{headers.get('content-type', '')}\n{headers.get('date', '')}\n"
+                          f"x-acs-signature-method:HMAC-SHA1\n"
+                          f"x-acs-signature-nonce:{headers.get('x-acs-signature-nonce', '')}\n"
+                          f"x-acs-signature-version:1.0\nx-acs-version:{headers.get('x-acs-version', '')}\n{resource}")
+        key_secret_encode = self.ALIBABA_CLOUD_ACCESS_KEY_SECRET.encode('utf-8')
+        string_to_sign_encode = string_to_sign.encode('utf-8')
+        signature = hmac.new(key_secret_encode, string_to_sign_encode, hashlib.sha1).digest()
+        signature = base64.b64encode(signature)
+        return f"acs {self.ALIBABA_CLOUD_ACCESS_KEY_ID}:{signature.decode('utf-8')}"
+
+    def get_headers(self):
+        """
+        get default request headers, include "x-acs-signature" and "x-acs-version";
+        :return: request headers
+        """
+        return {
+            "accept": "application/json",
+            'date': time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime()),
+            'host': self.endpoint,
+            "x-acs-signature-nonce": str(random.randint(1, 10000)),
+            "x-acs-signature-method": "HMAC-SHA1",
+            "x-acs-signature-version": "1.0",
+            "x-acs-version": "2023-03-30",
+            "content-type": "application/json",
+            "content-md5": ""
+        }
 
     def deploy(self, function_name):
         try:
-            runtime = util_models.RuntimeOptions()
-            headers = {}
-            try:
-                # 复制代码运行请自行打印 API 的返回值
-                self.client.create_function_with_options_async({}, headers, runtime)
-            except Exception as e:
-                # logger.warning(e)
-                return False
-            # cache
-            # xxxxx
-            return trigger["endpoint"]
+            if not self.get_function(function_name).get("functionId", None):
+                self.create_function(function_name)
+            self.create_trigger()
+            return ""
         except Exception as e:
             # logger.warning(e)
             return False
 
-    def endpoint(self, function_name):
+    def get_function(self, function_name):
+        """
+        get the function detail;
+        docs: https://help.aliyun.com/document_detail/2618610.html?spm=a2c4g.2618615.0.0.4b4613f35Qq27z
+        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
+        :return: the request response
+        """
         try:
-            runtime = util_models.RuntimeOptions()
-            trigger = self.client.get_trigger_with_options_async(function_name, 'serverlessai_trigger', {}, runtime)
-            trigger_domain = trigger["endpoint"]
-            # cache
-            # xxxxx
-            return trigger["endpoint"]
+            resource = f"/2023-03-30/functions/{function_name}"
+            headers = self.get_headers()
+            headers['authorization'] = self.sign_request('GET', headers, resource)
+            url = f"https://{self.endpoint}{resource}"
+            response_data = requests.get(url, headers=headers).content.decode("utf-8")
+            return json.loads(response_data)
+        except Exception as e:
+            # logger.warning(e)
+            return False
+
+    def get_trigger(self, function_name, trigger_name="serverlessai_default_trigger"):
+        """
+        get the function trigger detail;
+        docs: https://help.aliyun.com/document_detail/2618615.html?spm=a2c4g.2618641.0.0.79653c17XYM3S8
+        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
+        :param trigger_name: trigger name, default: serverlessai_default_trigger
+        :return: the request response
+        """
+        try:
+            resource = f"/2023-03-30/functions/{function_name}/triggers/{trigger_name}"
+            headers = self.get_headers()
+            headers['authorization'] = self.sign_request('GET', headers, resource)
+            url = f"https://{self.endpoint}{resource}"
+            response_data = requests.get(url, headers=headers).content.decode("utf-8")
+            return json.loads(response_data)
+        except Exception as e:
+            # logger.warning(e)
+            return False
+
+    def create_function(self, function_name):
+        """
+        create alibaba cloud fc function, default is custom container function;
+        docs: https://help.aliyun.com/document_detail/2618641.html?spm=a2c4g.2618639.0.0.393b7c57jVkKrX
+        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
+        :return: created response
+        """
+        try:
+            resource = f"/2023-03-30/functions"
+            headers = self.get_headers()
+            headers['authorization'] = self.sign_request('POST', headers, resource)
+            url = f"https://{self.endpoint}{resource}"
+            default_config = {
+                "cpu": 0.05,
+                "customContainerConfig": {},
+                "description": "Serverless AI Project, {model_id}-{model_version}",
+                "environmentVariables": {},
+                "functionName": function_name,
+                "gpuConfig": {
+
+                },
+                "role": "",
+                "runtime": "custom-container",
+                "timeout": 300,
+
+            }
+            merged_config = {**default_config, **(self.config or {})}
+            response_data = requests.post(url, headers=headers, json=merged_config).content.decode("utf-8")
+            return json.loads(response_data)
+        except Exception as e:
+            # logger.warning(e)
+            return False
+
+    def create_trigger(self, function_name, trigger_name="serverlessai_default_trigger"):
+        '''
+        create alibaba cloud fc function trigger;
+        docs: https://help.aliyun.com/document_detail/2618639.html?spm=a2c4g.2508973.0.0.3d7c7c57JwPHEM
+        more: the trigger config detail: https://github.com/devsapp/fc/blob/main/src/lib/interface/fc/trigger.ts
+        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
+        :param trigger_name: trigger name, default: serverlessai_default_trigger
+        :return: created response
+        '''
+        try:
+            resource = f"/2023-03-30/functions/{function_name}/triggers"
+            headers = self.get_headers()
+            headers['authorization'] = self.sign_request('POST', headers, resource)
+            url = f"https://{self.endpoint}{resource}"
+            response_data = requests.post(url, headers=headers, json={
+                "description": "Serverless AI Project Default HTTP Trigger",
+                "qualifier": "LATEST",
+                "triggerConfig": {
+                    "authType": "anonymous",
+                    "methods": ["GET", "POST"]
+                },
+                "triggerName": trigger_name,
+                "triggerType": "http"
+            }).content.decode("utf-8")
+            return json.loads(response_data)
         except Exception as e:
             # logger.warning(e)
             return False
