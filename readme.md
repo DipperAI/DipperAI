@@ -2,6 +2,8 @@
 
 ![](./docs/images/banner.png)
 
+<center> English ｜ <a href="./readme_zh.md">中文</a> </center>
+
 ## Introduction
 In the rapidly evolving field of artificial intelligence, the process of developing and deploying models is often complex and time-consuming. DipperAI aims to significantly simplify this process through a sleek and powerful serverless architecture framework. It allows developers and data scientists to directly find, initialize, and call machine learning models from model repositories like Hugging Face and ModelScope, without the hassle of downloading, deploying, or maintaining the models.
 

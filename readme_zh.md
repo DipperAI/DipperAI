@@ -2,6 +2,8 @@
 
 ![](./docs/images/banner.png)
 
+<center>  <a href="./readme.md">English</a> ｜ 中文 </center>
+
 ## 简介
 
 在快速演进的人工智能领域，模型的开发和部署过程往往复杂且耗时。DipperAI 旨在通过一个简洁强大的无服务器 (Serverless) 架构框架，极大地简化这一过程。它允许开发者和数据科学家直接从模型库（如HuggingFace和ModelScope）中找到、初始化并调用机器学习模型，无需关心模型的下载、部署或维护等繁琐步骤。
