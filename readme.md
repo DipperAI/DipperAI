@@ -1,6 +1,6 @@
 # DipperAI: A Serverless Model-as-a-Service Framework
 
-<p align="center" style="color: red">Comming soon ...</p>
+<p align="center" style="color: red">Coming soon ...</p>
 
 ![](./docs/images/banner.png)
 
