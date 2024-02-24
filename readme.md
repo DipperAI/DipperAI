@@ -1,5 +1,7 @@
 # DipperAI: A Serverless Model-as-a-Service Framework
 
+<p align="center" style="color: red">Comming soon ...</p>
+
 ![](./docs/images/banner.png)
 
 <p align="center">English ｜ <a href="./readme_zh.md">中文</a></p>

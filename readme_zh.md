@@ -1,5 +1,7 @@
 # DipperAI: 无服务器架构下的模型即服务框架
 
+<p align="center" style="color: red">即将发布 ...</p>
+
 ![](./docs/images/banner.png)
 
 <p align="center"><a href="./readme.md">English</a> ｜ 中文</p>

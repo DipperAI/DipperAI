@@ -17,8 +17,14 @@ def success(self, message, *args, **kws):
 logging.Logger.success = success
 
 
-# 自定义日志格式器
 class CustomFormatter(logging.Formatter):
+    """
+    define custom formatter:
+      # grey: debug
+      # green: success
+      # yellow: warning
+      # red: error
+    """
     grey = Style.DIM + Fore.WHITE
     green = Fore.GREEN
     yellow = Fore.YELLOW
@@ -26,11 +32,11 @@ class CustomFormatter(logging.Formatter):
     reset = Style.RESET_ALL
 
     def format(self, record):
-        '''
+        """
         rewrite format style
         :param record: record attr
         :return: message with new style
-        '''
+        """
         log_fmt = DEFAULT_FORMAT
         if record.levelno == SUCCESS:
             log_fmt += f"{self.green}%(message)s{self.reset}"
