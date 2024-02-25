@@ -1,27 +1,17 @@
+import re
 import json
 import requests
-from vendor import Alibaba
-from version import __version__
-from utils.logger import setup_logger
-from utils.cache import set_cache, get_cache
+from maas.core import MaaS
 
 
-class Modelscope:
-    def __init__(self, model_url, cloud=None, config=None, url=None, debug=False):
-        """
+class Modelscope(MaaS):
 
-        :param url:
-        :param cloud: vendor
-        """
-        self.model_url = model_url
-        self.url = url
-        self.logger = setup_logger(debug=debug)
-        self.vendor = cloud or Alibaba(config, self.logger)
-        self.config = config
-        self.service_name = ""
-        self.model_id = ""
-        self.model_version = ""
-        self.headers = {'Content-Type': 'application/json', "User-Agent": "serverlessai@%s" % __version__}
+    def init(self):
+        if self.model_url:
+            self.model_id = re.findall("modelscope\.cn/models/(.*?)/summary", self.model_url)
+            if len(self.model_id) == 0: raise BaseException("Incorrect provision of model_URL or model_id parameters.")
+            self.model_id = self.model_id[0]
+            self.model_version = "master"
 
 
     def login(self):
@@ -41,7 +31,8 @@ class Modelscope:
         source code: https://modelscope.cn/docs/api_docs/API文档%2Fbuild%2Fjson%2F_modules%2Fmodelscope%2Fhub%2Ffile_download%2F%23model_file_download
         :return: Task type (https://modelscope.cn/docs/模型的推理Pipeline#当前支持的task列表)
         """
-        file_url = 'https://modelscope.cn/api/v1/models/%s/repo?Revision=%s&FilePath=configuration.json' % (self.model_id, self.model_version)
+        file_url = 'https://modelscope.cn/api/v1/models/%s/repo?Revision=%s&FilePath=configuration.json' % (
+            self.model_id, self.model_version)
         if self.token: self.login()
         response_json = json.loads(requests.request("POST", file_url, headers=self.headers).content.decode("utf-8"))
         return response_json["task"]
@@ -65,3 +56,6 @@ class Modelscope:
         json_data = {"input": input, "batch_size": batch_size}
         headers = {}
         if self.url: return requests.post(self.url, json=json_data, headers=headers).content
+        # check cache
+        # print(self.maas)
+        # self.url = get_cache("")

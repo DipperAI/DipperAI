@@ -74,7 +74,7 @@ class Alibaba:
         """
         get the function detail;
         docs: https://help.aliyun.com/document_detail/2618610.html?spm=a2c4g.2618615.0.0.4b4613f35Qq27z
-        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
+        :param function_name: function name, default regex: dipperai-{model_platform}-{model_id}-{model_version}
         :return: the request response
         """
         try:
@@ -92,8 +92,8 @@ class Alibaba:
         """
         get the function trigger detail;
         docs: https://help.aliyun.com/document_detail/2618615.html?spm=a2c4g.2618641.0.0.79653c17XYM3S8
-        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
-        :param trigger_name: trigger name, default: serverlessai_default_trigger
+        :param function_name: function name, default regex: dipperai-{model_platform}-{model_id}-{model_version}
+        :param trigger_name: trigger name, default: dipperai_default_trigger
         :return: the request response
         """
         try:
@@ -111,7 +111,7 @@ class Alibaba:
         """
         create alibaba cloud fc function, default is custom container function;
         docs: https://help.aliyun.com/document_detail/2618641.html?spm=a2c4g.2618639.0.0.393b7c57jVkKrX
-        :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
+        :param function_name: function name, default regex: dipperai-{model_platform}-{model_id}-{model_version}
         :return: created response
         """
         try:
@@ -140,13 +140,13 @@ class Alibaba:
             # logger.warning(e)
             return False
 
-    def create_trigger(self, function_name, trigger_name="serverlessai_default_trigger"):
+    def create_trigger(self, function_name, trigger_name="dipperai_default_trigger"):
         '''
         create alibaba cloud fc function trigger;
         docs: https://help.aliyun.com/document_detail/2618639.html?spm=a2c4g.2508973.0.0.3d7c7c57JwPHEM
         more: the trigger config detail: https://github.com/devsapp/fc/blob/main/src/lib/interface/fc/trigger.ts
         :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
-        :param trigger_name: trigger name, default: serverlessai_default_trigger
+        :param trigger_name: trigger name, default: dipperai_default_trigger
         :return: created response
         '''
         try:
@@ -168,3 +168,12 @@ class Alibaba:
         except Exception as e:
             # logger.warning(e)
             return False
+
+    def check(self, name, config):
+        pass
+
+    def update(self, name, config):
+        pass
+
+    def create(self, name, config):
+        pass
