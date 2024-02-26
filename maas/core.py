@@ -1,3 +1,4 @@
+import importlib
 from vendor import Alibaba
 from utils.logger import setup_logger
 from utils.cache import set_cache, get_cache
@@ -10,8 +11,7 @@ model_create_error = "Model service create failed."
 
 class MaaS:
 
-    def __init__(self, model_url=None, model_id=None, model_version="master", cloud=None, config=None, url=None,
-                 debug=False):
+    def __init__(self, model_url=None, model_id=None, model_version="master", cloud=None, config=None, url=None, debug=False):
         """
         init default vars
         :param model_url: model url, like: https://modelscope.cn/models/iic/cv_convnextTiny_ocr-recognition-general_damo/summary
@@ -30,7 +30,7 @@ class MaaS:
         self.model_version = model_version
         self.logger = setup_logger(debug=debug)
         self.maas_name = self.__class__.__name__
-        self.vendor = cloud or Alibaba(config, self.logger)
+        self.vendor = cloud or Alibaba(config=config, logger=self.logger)
 
     def model_info(self, model_url, model_id, model_version, config):
         """
@@ -73,6 +73,9 @@ class MaaS:
         # special attention should be paid to whether the name will exceed the maximum value
         # for example, a length of 64 is the upper limit
         self.default_resource_name = self.default_resource_name.replace("/", "-")
+        config_func_name = str("%s_%s_default_config" % (self.maas_name, self.vendor.__class__.__name__)).lower()
+        lib_module = importlib.import_module('resources.config')
+        config = getattr(lib_module, config_func_name)(self.default_resource_name, self.config)
         # get cache
         #   1. get cache success:
         #     1.1 config mismatching: update
@@ -82,36 +85,36 @@ class MaaS:
         #     1.2 config matching: return
         #   2. get cache failed: continue
         cache_model_info = get_cache(self.default_resource_name)
-        if cache_model_info.get("url"):
+        if cache_model_info and cache_model_info.get("url"):
             if not self.check_config(self.config, cache_model_info.get("config", {})):
-                update_result = self.vendor.update(self.default_resource_name, self.config)
+                update_result = self.vendor.update(self.default_resource_name, config)
                 if not update_result.get("url"): raise BaseException(update_result.get("error", model_update_error))
                 set_cache(self.default_resource_name, update_result)
             return cache_model_info["url"]
-        # check resource
-        #   1. check resource success: return
+        # check resources
+        #   1. check resources success: return
         #     1.1 config mismatching: update
         #       1.1.1 update success:
         #       1.1.2 update failed:
         #       1.1.3 update unknown:
         #     1.2 config matching: return
-        #   2. check resource failed: raise exception
-        #   3. check resource unknown: continue
-        check_result = self.vendor.check(self.default_resource_name, self.config)
+        #   2. check resources failed: raise exception
+        #   3. check resources unknown: continue
+        check_result = self.vendor.check(self.default_resource_name, config)
         if check_result.get("url"):
             if not self.check_config(self.config, check_result.get("config")):
-                update_result = self.vendor.update(self.default_resource_name, self.config)
+                update_result = self.vendor.update(self.default_resource_name, config)
                 if not update_result.get("url"): raise BaseException(update_result.get("error", model_update_error))
                 set_cache(self.default_resource_name, update_result)
             else:
                 set_cache(self.default_resource_name, check_result)
             return check_result["url"]
         if check_result.get("error"): raise BaseException(check_result.get("error", model_check_error))
-        # create resource
-        #    1. create resource success: return
-        #    2. create resource failed: raise exception
-        #    3. create resource unknown: raise exception
-        create_result = self.vendor.create(self.default_resource_name, self.config)
+        # create resources
+        #    1. create resources success: return
+        #    2. create resources failed: raise exception
+        #    3. create resources unknown: raise exception
+        create_result = self.vendor.create(self.default_resource_name, config)
         if create_result.get("url"):
             set_cache(self.default_resource_name, create_result)
             return create_result["url"]

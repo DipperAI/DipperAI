@@ -96,11 +96,12 @@ class Alibaba:
             self.logger.error(e)
             return False
 
-    def create_function(self, function_name):
+    def create_function(self, function_name, function_config):
         """
         create alibaba cloud fc function, default is custom container function;
         docs: https://help.aliyun.com/document_detail/2618641.html?spm=a2c4g.2618639.0.0.393b7c57jVkKrX
         :param function_name: function name, default regex: dipperai-{model_platform}-{model_id}-{model_version}
+        :param function_config: function config
         :return: created response
         """
         try:
@@ -165,7 +166,15 @@ class Alibaba:
         :param config: function config
         :return: check result
         """
-        pass
+        if config and config.get("function_name"): name = config["function_name"]
+        function_info = self.get_function(function_name=name)
+        if function_info:
+            trigger_info = self.get_trigger(function_name=name)
+            function_info['triggers'] = trigger_info
+            return {"config": function_info, "url": trigger_info["httpTrigger"]["urlInternet"]}
+        return {}
+
+
 
     def update(self, name, config):
         """
@@ -183,4 +192,5 @@ class Alibaba:
         :param config: function config
         :return: create result
         """
-        pass
+        # self.create_function(function_name=name, function_config=config)
+        # self.create_trigger(function_name=name)
