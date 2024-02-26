@@ -10,7 +10,8 @@ model_create_error = "Model service create failed."
 
 class MaaS:
 
-    def __init__(self, model_url=None, model_id=None, model_version="master", cloud=None, config=None, url=None, debug=False):
+    def __init__(self, model_url=None, model_id=None, model_version="master", cloud=None, config=None, url=None,
+                 debug=False):
         """
         init default vars
         :param model_url: model url, like: https://modelscope.cn/models/iic/cv_convnextTiny_ocr-recognition-general_damo/summary
@@ -31,19 +32,32 @@ class MaaS:
         self.maas_name = self.__class__.__name__
         self.vendor = cloud or Alibaba(config, self.logger)
 
-    def init(self):
-        pass
+    def model_info(self, model_url):
+        """
+        the MaaS module needs to rewrite this method, primarily for handling the model_url.
+        It involves parsing the model_url to extract the model_id and model_version.
+        :param model_url: model_url
+        :return: model_id, model_version(default: "master")
+        """
+        return None, None
 
-    def check_config(self, current_config=None):
+    def check_config(self, sub_dict, super_dict):
         """
         compare the current configuration with the user specified configuration
-        :param current_config: current configuration
+        :param sub_dict: user newly specified configuration
+        :param super_dict: current configuration, or default configuration
         :return: comparison results, True / False
                     True: indicates consistency
                     False: indicates inconsistency (requires update operation)
         """
-        if current_config is None: current_config = {}
-
+        for key, value in sub_dict.items():
+            if key not in super_dict: return False
+            if isinstance(value, dict):
+                if not isinstance(super_dict[key], dict): return False
+                if not self.check_config(value, super_dict[key]): return False
+            else:
+                if super_dict[key] != value: return False
+        return True
 
     def get_url(self):
         """
@@ -51,7 +65,8 @@ class MaaS:
         :return: service url
         """
         if self.url: return self.url
-        self.init()
+        if self.model_url and not self.model_id:
+            self.model_id, self.model_version = self.model_info(self.model_url)
         self.default_resource_name = f'dipperai-{self.maas_name}-{self.model_id}-{self.model_version}'
         # special attention should be paid to whether the name will exceed the maximum value
         # for example, a length of 64 is the upper limit
@@ -66,7 +81,7 @@ class MaaS:
         #   2. get cache failed: continue
         cache_model_info = get_cache(self.default_resource_name)
         if cache_model_info.get("url"):
-            if not self.check_config(cache_model_info.get("config", {})):
+            if not self.check_config(self.config, cache_model_info.get("config", {})):
                 update_result = self.vendor.update(self.default_resource_name, self.config)
                 if not update_result.get("url"): raise BaseException(update_result.get("error", model_update_error))
                 set_cache(self.default_resource_name, update_result)
@@ -82,7 +97,7 @@ class MaaS:
         #   3. check resource unknown: continue
         check_result = self.vendor.check(self.default_resource_name, self.config)
         if check_result.get("url"):
-            if not self.check_config(check_result.get("config")):
+            if not self.check_config(self.config, check_result.get("config")):
                 update_result = self.vendor.update(self.default_resource_name, self.config)
                 if not update_result.get("url"): raise BaseException(update_result.get("error", model_update_error))
                 set_cache(self.default_resource_name, update_result)

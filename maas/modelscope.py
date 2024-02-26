@@ -6,13 +6,10 @@ from maas.core import MaaS
 
 class Modelscope(MaaS):
 
-    def init(self):
-        if self.model_url:
-            self.model_id = re.findall("modelscope\.cn/models/(.*?)/summary", self.model_url)
-            if len(self.model_id) == 0: raise BaseException("Incorrect provision of model_URL or model_id parameters.")
-            self.model_id = self.model_id[0]
-            self.model_version = "master"
-
+    def model_info(self, model_url):
+        model_id = re.findall("modelscope\.cn/models/(.*?)/summary", model_url)
+        if len(model_id) == 0: raise BaseException("Incorrect provision of model_URL or model_id parameters.")
+        return model_id[0], "master"
 
     def login(self):
         """
