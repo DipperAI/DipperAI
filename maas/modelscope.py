@@ -2,14 +2,33 @@ import re
 import json
 import requests
 from maas.core import MaaS
+from version import __version__
 
 
 class Modelscope(MaaS):
 
-    def model_info(self, model_url):
-        model_id = re.findall("modelscope\.cn/models/(.*?)/summary", model_url)
-        if len(model_id) == 0: raise BaseException("Incorrect provision of model_URL or model_id parameters.")
-        return model_id[0], "master"
+    def __init__(self, model_url=None, model_id=None, model_version="master", cloud=None, config=None, url=None, debug=False):
+        super().__init__(model_url, model_id, model_version, cloud, config, url, debug)
+        self.headers = {'Content-Type': 'application/json', "User-Agent": "dipperai@%s" % __version__}
+        self.token = None
+
+    def model_info(self, model_url, model_id, model_version, config):
+        """
+        rewrite core file model_info func; get model information
+        :param model_url: model url
+        :param model_id: model id / name
+        :param model_version: model version
+        :param config: config
+        :return: model_id, model_version(default: "master"), config
+        """
+        if model_url and not model_id:
+            model_id = re.findall("modelscope\.cn/models/(.*?)/summary", model_url)
+            if len(model_id) == 0: raise BaseException("Incorrect provision of model_URL or model_id parameters.")
+            model_id = model_id[0]
+            model_version = "master"
+
+
+        return model_id, model_version, config
 
     def login(self):
         """
@@ -34,25 +53,19 @@ class Modelscope(MaaS):
         response_json = json.loads(requests.request("POST", file_url, headers=self.headers).content.decode("utf-8"))
         return response_json["task"]
 
-    def endpoint(self):
+    def invoke(self, input_args, batch_size=None):
         """
-        get the model service domain, if could not get the service domain, will call Vendor.deploy();
-        function_name = serverlessas-{model_id}-{model-version};
-        :return:
+        invoke func / container / api
+        :param input_args: input param
+        :param batch_size: batch size param
+        :return: response json / string
         """
-        url = self.vendor.get_trigger('serverlessas-%s-%s' % (self.model_id, self.model_version))
-        self.url = url if url else self.vendor.deploy()
-
-    def invoke(self, input, batch_size=None, auth=None):
-        """
-
-        :param input:
-        :param batch_size:
-        :return:
-        """
-        json_data = {"input": input, "batch_size": batch_size}
+        self.url = self.get_url()
+        json_data = {"input": input_args, "batch_size": batch_size}
         headers = {}
-        if self.url: return requests.post(self.url, json=json_data, headers=headers).content
-        # check cache
-        # print(self.maas)
-        # self.url = get_cache("")
+        result = requests.post(self.url, json=json_data, headers=headers).content.decode("utf-8")
+        try:
+            return json.loads(result)
+        except Exception as e:
+            self.logger.error(e)
+            return result

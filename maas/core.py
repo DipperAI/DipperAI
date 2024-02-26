@@ -32,14 +32,17 @@ class MaaS:
         self.maas_name = self.__class__.__name__
         self.vendor = cloud or Alibaba(config, self.logger)
 
-    def model_info(self, model_url):
+    def model_info(self, model_url, model_id, model_version, config):
         """
         the MaaS module needs to rewrite this method, primarily for handling the model_url.
         It involves parsing the model_url to extract the model_id and model_version.
-        :param model_url: model_url
-        :return: model_id, model_version(default: "master")
+        :param model_url: model url
+        :param model_id: model id / name
+        :param model_version: model version
+        :param config: config
+        :return: model_id, model_version(default: "master"), config
         """
-        return None, None
+        return model_id, model_version, config
 
     def check_config(self, sub_dict, super_dict):
         """
@@ -65,8 +68,7 @@ class MaaS:
         :return: service url
         """
         if self.url: return self.url
-        if self.model_url and not self.model_id:
-            self.model_id, self.model_version = self.model_info(self.model_url)
+        self.model_id, self.model_version, self.config = self.model_info(self.model_url, self.model_id, self.model_version, self.config)
         self.default_resource_name = f'dipperai-{self.maas_name}-{self.model_id}-{self.model_version}'
         # special attention should be paid to whether the name will exceed the maximum value
         # for example, a length of 64 is the upper limit

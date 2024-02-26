@@ -22,7 +22,6 @@ class Alibaba:
         self.ALIBABA_CLOUD_ACCESS_KEY_SECRET = ACCESS_KEY_SECRET
         self.endpoint = '1583208943291465.cn-hangzhou.fc.aliyuncs.com'
 
-
     def sign_request(self, method, headers, resource):
         """
         alibaba cloud api request sign method;
@@ -60,16 +59,6 @@ class Alibaba:
             "content-md5": ""
         }
 
-    def deploy(self, function_name):
-        try:
-            if not self.get_function(function_name).get("functionId", None):
-                self.create_function(function_name)
-            self.create_trigger()
-            return ""
-        except Exception as e:
-            # logger.warning(e)
-            return False
-
     def get_function(self, function_name):
         """
         get the function detail;
@@ -85,7 +74,7 @@ class Alibaba:
             response_data = requests.get(url, headers=headers).content.decode("utf-8")
             return json.loads(response_data)
         except Exception as e:
-            # logger.warning(e)
+            self.logger.error(e)
             return False
 
     def get_trigger(self, function_name, trigger_name="serverlessai_default_trigger"):
@@ -104,7 +93,7 @@ class Alibaba:
             response_data = requests.get(url, headers=headers).content.decode("utf-8")
             return json.loads(response_data)
         except Exception as e:
-            # logger.warning(e)
+            self.logger.error(e)
             return False
 
     def create_function(self, function_name):
@@ -137,18 +126,18 @@ class Alibaba:
             response_data = requests.post(url, headers=headers, json=merged_config).content.decode("utf-8")
             return json.loads(response_data)
         except Exception as e:
-            # logger.warning(e)
+            self.logger.error(e)
             return False
 
     def create_trigger(self, function_name, trigger_name="dipperai_default_trigger"):
-        '''
+        """
         create alibaba cloud fc function trigger;
         docs: https://help.aliyun.com/document_detail/2618639.html?spm=a2c4g.2508973.0.0.3d7c7c57JwPHEM
         more: the trigger config detail: https://github.com/devsapp/fc/blob/main/src/lib/interface/fc/trigger.ts
         :param function_name: function name, default regex: serverlessas-{model_id}-{model_version}
         :param trigger_name: trigger name, default: dipperai_default_trigger
         :return: created response
-        '''
+        """
         try:
             resource = f"/2023-03-30/functions/{function_name}/triggers"
             headers = self.get_headers()
@@ -166,14 +155,32 @@ class Alibaba:
             }).content.decode("utf-8")
             return json.loads(response_data)
         except Exception as e:
-            # logger.warning(e)
+            self.logger.error(e)
             return False
 
     def check(self, name, config):
+        """
+        check function is exist
+        :param name: function name
+        :param config: function config
+        :return: check result
+        """
         pass
 
     def update(self, name, config):
+        """
+        update the function to the specify config
+        :param name: function name
+        :param config: function config
+        :return: update result
+        """
         pass
 
     def create(self, name, config):
+        """
+        create the function with the specify config
+        :param name: function name
+        :param config: function config
+        :return: create result
+        """
         pass
