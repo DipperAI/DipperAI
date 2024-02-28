@@ -1,0 +1,21 @@
+target-version = "py311"
+extend-include = ["*.ipynb"]
+line-length = 80
+fix = true
+unsafe-fixes = true
+
+
+[lint]
+extend-select = [
+  "UP", # pyupgrade
+  "D",  # pydocstyle
+]
+extend-ignore = [
+  "D100", "D101", "D104", 
+  # TODO: docstring should enable after all docstring is added
+  "D103"
+]
+
+[lint.pydocstyle]
+# https://google.github.io/styleguide/pyguide.html
+convention = "google"
