@@ -14,3 +14,6 @@
 - vendor      # 对接部署平台目录，例如阿里云函数计算，AWS SegeMaker 等
 ```
 
+## 代码规范
+
+项目代码规范遵循 [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html) 规范；

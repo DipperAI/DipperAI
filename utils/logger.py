@@ -5,7 +5,7 @@ init(autoreset=True)
 
 # define a new log level
 SUCCESS = 25
-logging.addLevelName(SUCCESS, 'SUCCESS')
+logging.addLevelName(SUCCESS, "SUCCESS")
 DEFAULT_FORMAT = "[%(asctime)s] [%(levelname)s]] "
 
 
@@ -18,13 +18,14 @@ logging.Logger.success = success
 
 
 class CustomFormatter(logging.Formatter):
+    """define custom formatter.
+
+    # grey: debug
+    # green: success
+    # yellow: warning
+    # red: error.
     """
-    define custom formatter:
-      # grey: debug
-      # green: success
-      # yellow: warning
-      # red: error
-    """
+
     grey = Style.DIM + Fore.WHITE
     green = Fore.GREEN
     yellow = Fore.YELLOW
@@ -32,10 +33,10 @@ class CustomFormatter(logging.Formatter):
     reset = Style.RESET_ALL
 
     def format(self, record):
-        """
-        rewrite format style
+        """Rewrite format style.
+
         :param record: record attr
-        :return: message with new style
+        :return: message with new style.
         """
         log_fmt = DEFAULT_FORMAT
         if record.levelno == SUCCESS:
@@ -56,10 +57,10 @@ class CustomFormatter(logging.Formatter):
 
 
 def setup_logger(debug=False):
-    """
-    set logger attr
+    """Set logger attr.
+
     :param debug: if True, will show debug message, else will not show debug message
-    :return: logger attr
+    :return: logger attr.
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG if debug else logging.INFO)

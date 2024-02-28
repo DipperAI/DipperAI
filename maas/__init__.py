@@ -1,1 +1,0 @@
-from .modelscope import Modelscope
