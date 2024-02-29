@@ -8,20 +8,24 @@ func name regex: {maas_class_name}_{vendor_class_name}_default_config (all lette
 """
 
 
-def modelscope_alibaba_default_config(name, config):
+def modelscope_alibaba_default_config(name, config, **kwargs):
     """Get modelscope alibaba function config.
 
     :param name: function name
     :param config: user config
     :return: config.
     """
-    return {
+    default_config = {
         "cpu": 0.05,
         "customContainerConfig": {},
         "description": "Serverless AI Project, {model_id}-{model_version}",
         "environmentVariables": {},
-        "gpuConfig": {},
+        "gpuConfig": {
+        },
         "role": "",
         "runtime": "custom-container",
         "timeout": 300,
     }
+
+
+    return

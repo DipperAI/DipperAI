@@ -20,9 +20,9 @@
 ## 使用示例
 
 ```python
-from dipperai.maas import modelscope
+from dipperai.maas import Modelscope
 model_url = "https://modelscope.cn/models/iic/cv_resnet18_card_correction/summary"
-ocr = modelscope(model_url, local=True).run("image url")
+ocr = Modelscope(model_url).invoke("image url")
 ```
 
 ## 为何选择DipperAI
