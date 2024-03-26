@@ -15,6 +15,7 @@ class Alibaba:
         ACCESS_KEY_SECRET=os.environ.get("ALIBABA_CLOUD_ACCESS_KEY_SECRET", None),
         SECURITY_TOKEN=os.environ.get("ALIBABA_CLOUD_SECURITY_TOKEN", None),
         ACCOUNT_ID=os.environ.get("FC_ACCOUNT_ID", None),
+        region=os.environ.get("FC_REGION", "cn-beijing"),
         config=None,
         logger=None,
     ):
@@ -32,7 +33,7 @@ class Alibaba:
         self.ALIBABA_CLOUD_ACCESS_KEY_ID = ACCESS_KEY_ID
         self.ALIBABA_CLOUD_SECURITY_TOKEN = SECURITY_TOKEN
         self.ALIBABA_CLOUD_ACCESS_KEY_SECRET = ACCESS_KEY_SECRET
-        self.endpoint = "1583208943291465.cn-hangzhou.fc.aliyuncs.com"
+        self.endpoint = f"{ACCOUNT_ID}.{region}.fc.aliyuncs.com"
 
     def sign_request(self, method, headers, resource):
         """Alibaba cloud api request sign method;
@@ -89,13 +90,15 @@ class Alibaba:
                 "GET", headers, resource
             )
             url = f"https://{self.endpoint}{resource}"
-            response_data = requests.get(url, headers=headers).content.decode(
-                "utf-8"
-            )
+            resp = requests.get(url, headers=headers)
+            response_data = resp.content.decode("utf-8")
+            if resp.status_code != 200:
+                self.logger.error(f"get function error: {response_data}")
+                return {}
             return json.loads(response_data)
         except Exception as e:
             self.logger.error(e)
-            return False
+            return {}
 
     def get_trigger(self, function_name, trigger_name="dipperai_default_trigger"):
         """Get the function trigger detail;
@@ -114,13 +117,15 @@ class Alibaba:
                 "GET", headers, resource
             )
             url = f"https://{self.endpoint}{resource}"
-            response_data = requests.get(url, headers=headers).content.decode(
-                "utf-8"
-            )
+            resp = requests.get(url, headers=headers)
+            response_data = resp.content.decode("utf-8")
+            if resp.status_code != 200:
+                self.logger.error(f"get trigger error: {response_data}")
+                return {}
             return json.loads(response_data)
         except Exception as e:
             self.logger.error(e)
-            return False
+            return {}
 
     def create_function(self, function_name, function_config):
         """Create alibaba cloud fc function, default is custom container function;
@@ -149,13 +154,17 @@ class Alibaba:
                 "timeout": 300,
             }
             merged_config = {**default_config, **(self.config or {})}
-            response_data = requests.post(
+            resp = requests.post(
                 url, headers=headers, json=merged_config
-            ).content.decode("utf-8")
+            )
+            response_data = resp.content.decode("utf-8")
+            if resp.status_code != 200:
+                self.logger.error(f"create function error {response_data}")
+                return {}
             return json.loads(response_data)
         except Exception as e:
             self.logger.error(e)
-            return False
+            return {}
 
     def create_trigger(self, function_name, trigger_name="dipperai_default_trigger"):
         """Create alibaba cloud fc function trigger;
@@ -173,24 +182,28 @@ class Alibaba:
                 "POST", headers, resource
             )
             url = f"https://{self.endpoint}{resource}"
-            response_data = requests.post(
+            resp = requests.post(
                 url,
                 headers=headers,
                 json={
                     "description": "Serverless AI Project Default HTTP Trigger",
                     "qualifier": "LATEST",
-                    "triggerConfig": {
+                    "triggerConfig": json.dumps({
                         "authType": "anonymous",
                         "methods": ["GET", "POST"],
-                    },
+                    }),
                     "triggerName": trigger_name,
                     "triggerType": "http",
                 },
-            ).content.decode("utf-8")
+            )
+            response_data = resp.content.decode("utf-8")
+            if resp.status_code != 200:
+                self.logger.error(f"create trigger {response_data}")
+                return {}
             return json.loads(response_data)
         except Exception as e:
             self.logger.error(e)
-            return False
+            return {}
 
     def check(self, name, config):
         """Check function is exist.
