@@ -1,5 +1,4 @@
 import os
-import sys
 import importlib
 import requests
 from maas.core import MaaS
@@ -68,4 +67,3 @@ class HuggingFace(MaaS):
         """
         return self.model_meta["pipeline_tag"]
 
-        
