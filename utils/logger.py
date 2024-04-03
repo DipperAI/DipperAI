@@ -64,7 +64,14 @@ def setup_logger(debug=False):
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(CustomFormatter())
-    logger.addHandler(console_handler)
+    # 检查是否已经添加了处理程序
+    if not logger.handlers:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(CustomFormatter())
+        logger.addHandler(console_handler)
+    else:
+        # 可选：更新现有处理程序的日志级别
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG if debug else logging.INFO)
+
     return logger

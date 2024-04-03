@@ -6,6 +6,7 @@ import base64
 import random
 import hashlib
 import requests
+from typing import Tuple
 
 
 class Alibaba:
@@ -16,7 +17,6 @@ class Alibaba:
         SECURITY_TOKEN=os.environ.get("ALIBABA_CLOUD_SECURITY_TOKEN", None),
         ACCOUNT_ID=os.environ.get("FC_ACCOUNT_ID", None),
         region=os.environ.get("FC_REGION", "cn-beijing"),
-        config=None,
         logger=None,
     ):
         """Initialize the Alibaba class with the provided parameters.
@@ -28,13 +28,12 @@ class Alibaba:
         :param config: Configuration for the Alibaba class
         :param logger: Logger for the Alibaba class
         """
-        self.config = config
         self.logger = logger
         self.ALIBABA_CLOUD_ACCESS_KEY_ID = ACCESS_KEY_ID
         self.ALIBABA_CLOUD_SECURITY_TOKEN = SECURITY_TOKEN
         self.ALIBABA_CLOUD_ACCESS_KEY_SECRET = ACCESS_KEY_SECRET
         self.endpoint = f"{ACCOUNT_ID}.{region}.fc.aliyuncs.com"
-
+    
     def sign_request(self, method, headers, resource):
         """Alibaba cloud api request sign method;
         docs: https://help.aliyun.com/zh/sdk/product-overview/roa-mechanism?spm=a2c4g.2618586.0.i9.
@@ -127,7 +126,7 @@ class Alibaba:
             self.logger.error(e)
             return {}
 
-    def create_function(self, function_name, function_config):
+    def create_function(self, function_name:str, function_config:dict):
         """Create alibaba cloud fc function, default is custom container function;
         docs: https://help.aliyun.com/document_detail/2618641.html?spm=a2c4g.2618639.0.0.393b7c57jVkKrX.
 
@@ -153,7 +152,7 @@ class Alibaba:
                 "runtime": "custom-container",
                 "timeout": 300,
             }
-            merged_config = {**default_config, **(self.config or {})}
+            merged_config = {**default_config, **(function_config or {})}
             resp = requests.post(
                 url, headers=headers, json=merged_config
             )
@@ -205,27 +204,29 @@ class Alibaba:
             self.logger.error(e)
             return {}
 
-    def check(self, name, config):
-        """Check function is exist.
+    def check(self, name: str) -> Tuple[dict, bool]:
+        """
+        Check function is exist.
 
         :param name: function name
-        :param config: function config
         :return: check result.
         """
-        if config and config.get("function_name"):
-            name = config["function_name"]
-        function_info = self.get_function(function_name=name)
-        if function_info:
-            trigger_info = self.get_trigger(function_name=name)
-            function_info["triggers"] = trigger_info
-            return {
-                "config": function_info,
-                "url": trigger_info["httpTrigger"]["urlInternet"],
-            }
-        return {}
+        try:
+            function_info = self.get_function(function_name=name)
+            if function_info:
+                trigger_info = self.get_trigger(function_name=name)
+                function_info["triggers"] = trigger_info
+                return {
+                    "config": function_info,
+                    "url": trigger_info["httpTrigger"]["urlInternet"],
+                }, True
+        except Exception as e:
+            self.logger.error(e)
+        return {}, False
 
-    def update(self, name, config):
-        """Update the function to the specify config.
+    def update(self, name:str, config:dict) ->Tuple[dict, bool]:
+        """
+        Update the function to the specify config.
 
         :param name: function name
         :param config: function config
@@ -233,12 +234,24 @@ class Alibaba:
         """
         pass
 
-    def create(self, name, config):
-        """Create the function with the specify config.
+    def create(self, name: str, config: dict = None) -> dict:
+        """
+        Create the function with the specify config.
 
         :param name: function name
         :param config: function config
         :return: create result.
         """
-        # self.create_function(function_name=name, function_config=config)
-        # self.create_trigger(function_name=name)
+        try:
+            fc_config = self.create_function(function_name=name, function_config=config)
+            if fc_config:
+                trigger = self.create_trigger(function_name=name)
+                self.logger.info(f"deploy function {name} to alibaba cloud function compute")
+                return {
+                    "url":trigger["httpTrigger"]["urlInternet"],
+                    "config": fc_config
+                }
+        except Exception as e:
+            self.logger.error(e)
+            return {"error" : e}
+        return {}
