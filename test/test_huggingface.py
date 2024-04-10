@@ -9,7 +9,15 @@ from maas.huggingface import HuggingFace
 class TestHuggingFace(unittest.TestCase):
 
     def setUp(self):
-        self.hf = HuggingFace("distilbert/distilbert-base-uncased-finetuned-sst-2-english")
+        self.hf = HuggingFace(
+            model_id="distilbert/distilbert-base-uncased-finetuned-sst-2-english",
+            # service_config={
+            #     "parameters": {
+            #         "gpuMemorySize": "15360",
+            #         "memorySize": "30720"
+            #     }
+            # }
+        )
         # self.hf = HuggingFace("cardiffnlp/twitter-roberta-base-sentiment-latest")
 
 
