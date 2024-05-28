@@ -1,5 +1,4 @@
 import os
-import sys
 import importlib
 import requests
 from maas.core import MaaS
@@ -7,13 +6,13 @@ from vendor import Alibaba
 
 
 class HuggingFace(MaaS):
-    def __init__(self, model_id: str, model_version: str = None, config: dict = None, 
-                  service_config: dict = None, cloud: any = None, service_url:str = None):
-        self.access_token = os.environ.get("HF_ACCESS_TOKEN", "")
+    def __init__(self, model_id: str, model_version: str = "master", service_config: dict = None,
+                 cloud: any = None, service_url: str = None):
+        self.region = os.environ.get("HF_REGION", "cn-beijing")
+        self.access_token = os.environ.get("HF_ACCESS_TOKEN", None)
         self.hf_endpoint = os.environ.get("HF_ENDPOINT") or "https://huggingface.co"
-        super().__init__(model_id=model_id, model_version=model_version or "main", cloud=cloud, 
+        super().__init__(model_id=model_id, model_version=model_version, cloud=cloud,
                          service_config=service_config, service_url=service_url)
-
 
     def get_model_meta(self):
         """
@@ -36,7 +35,7 @@ class HuggingFace(MaaS):
             raise Exception("Failed to get model meta data from huggingface.co")
         # 返回解析后的JSON响应
         return r.json()
-    
+
     def get_service_config(self, user_config: dict) -> dict:
         """
         get service config
@@ -45,8 +44,8 @@ class HuggingFace(MaaS):
         # 补充配置
         config_func_name = self.get_config_func_name()
         lib_module = importlib.import_module('resources.config')
-        return getattr(lib_module, config_func_name)(user_config, name=self.get_resource_name(),
-            model_id=self.model_id, model_task=self.__get_task(), access_token=self.access_token, library=self.__get_library())
+        return getattr(lib_module, config_func_name)(user_config, model_id=self.model_id, region=self.region,
+                                                     model_version=self.model_version, access_token=self.access_token)
 
     def __get_library(self) -> str:
         """
@@ -67,5 +66,3 @@ class HuggingFace(MaaS):
         str - model_meta字典中"pipeline_tag"键对应的值，表示当前任务的标识。
         """
         return self.model_meta["pipeline_tag"]
-
-        

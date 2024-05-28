@@ -1,38 +1,42 @@
+import importlib
 import json
+import os
+
 import requests
 from maas.core import MaaS
 from version import __version__
 
 
 class Modelscope(MaaS):
-    def __init__(
-        self,
-        model_url=None,
-        model_id=None,
-        model_version="master",
-        cloud=None,
-        config=None,
-        url=None,
-        debug=False,
-    ):
+    def __init__(self, model_id: str, model_version: str = "master", service_config: dict = None,
+                 cloud: any = None, service_url: str = None):
         """Initialize the Modelscope instance.
-
-        :param model_url: The URL of the model.
         :param model_id: The ID of the model.
         :param model_version: The version of the model, default is "master".
+        :param service_config: The configuration for the model.
         :param cloud: The cloud provider.
-        :param config: The configuration for the model.
-        :param url: The URL for the model.
-        :param debug: A flag indicating whether to run in debug mode.
+        :param service_url: The URL of the model.
         """
-        super().__init__(
-            model_url, model_id, model_version, cloud, config, url, debug
-        )
+        self.region = os.environ.get("MS_REGION", "cn-hangzhou")
+        self.access_token = os.environ.get("DASHSCOPE_API_KEY", None)
+        self.model_version = model_version
+        super().__init__(model_id=model_id, model_version=model_version, cloud=cloud,
+                         service_config=service_config, service_url=service_url)
         self.headers = {
             "Content-Type": "application/json",
             "User-Agent": "dipperai@%s" % __version__,
         }
-        self.token = None
+
+    def get_service_config(self, user_config: dict) -> dict:
+        """
+        get service config
+        :return: dict
+        """
+        # 补充配置
+        config_func_name = self.get_config_func_name()
+        lib_module = importlib.import_module('resources.config')
+        return getattr(lib_module, config_func_name)(user_config, model_id=self.model_id, region=self.region,
+                                                     model_version=self.model_version, access_token=self.access_token)
 
     def login(self):
         """
@@ -41,7 +45,7 @@ class Modelscope(MaaS):
         :return:
         """
         login_url = "https://modelscope.cn/api/v1/login"
-        payload = json.dumps({"AccessToken": self.token})
+        payload = json.dumps({"AccessToken": self.access_token})
         response_attr = requests.request("POST", login_url, headers=self.headers, data=payload)
         self.headers["Cookie"] = response_attr.cookies
 

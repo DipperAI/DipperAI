@@ -4,3 +4,5 @@ Requests==2.31.0
 # dev dependencies
 ruff==0.2.2
 pre-commit==3.6.2
+
+dashscope~=1.17.0
